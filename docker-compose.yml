@@ -1,0 +1,22 @@
+services:
+  es01:
+    image: elasticsearch:8.11.1
+    container_name: es01
+    environment:
+      - ELASTIC_CLUSTER=false
+      - CLUSTER_MASTER_NODE_NAME=es01
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - ${PWD}/esdata01:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+    networks:
+      - esnet
+
+networks:
+  esnet:

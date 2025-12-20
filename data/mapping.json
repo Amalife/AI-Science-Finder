@@ -1,0 +1,37 @@
+{
+    "mappings": {
+        "properties": {
+            "title": {
+                "type": "text"
+            },
+            "abstract": {
+                "type": "text"
+            },
+            "full_text": {
+                "type": "text"
+            },
+            "url": {
+                "type": "keyword"
+            },
+            "metadata": {
+                "properties": {
+                    "author": {
+                        "type": "keyword"
+                    },
+                    "published_date": {
+                        "type": "date"
+                    },
+                    "tags": {
+                        "type": "keyword"
+                    }
+                }
+            },
+            "vector": {
+                "type": "dense_vector",
+                "dims": 1024,
+                "index": true,
+                "similarity": "cosine"
+            }
+        }
+    }
+}

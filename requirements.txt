@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+elasticsearch==8.11.1
+gigachat
+pydantic
+python-dotenv
+streamlit
+bcrypt
+tqdm
+pandas
+aiohttp
+pydantic_settings
