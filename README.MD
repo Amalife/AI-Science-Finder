@@ -43,6 +43,6 @@ python main.py
 ```
 6.3 Запуск Фронтэнда приложения (в новом терминале)
 ```bash
-python frontend/main.py
+streamlit run frontend/main.py
 ```
 6. Откройте в браузере http://localhost:8501/
