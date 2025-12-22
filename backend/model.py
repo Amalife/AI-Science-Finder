@@ -18,6 +18,7 @@ class SearchRequest(BaseModel):
     author_filter: Optional[str] = None
     date_from: Optional[str] = None
     date_to: Optional[str] = None
+    tags_filter: Optional[str] = None
     top_k: int = 5
 
 class SearchResult(BaseModel):

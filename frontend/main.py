@@ -9,6 +9,22 @@ def main():
         st.set_page_config(layout="wide")
     else:
         st.set_page_config(layout="centered")
+
+    # Добавление CSS для фона и светлого текста
+    st.markdown(
+        """
+        <style>
+        .stApp {
+            background-image: url('https://raw.githubusercontent.com/dmshipov/streamlit-apps/main/ai_science_finder/orig-scaled.jpg');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            color: #FFFFFF;  /* Светлый цвет текста для видимости на фоне */
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
     
     st.title("AI Science Finder")
     
@@ -24,8 +40,12 @@ def main():
     # Если пользователь вошёл, показываем страницу
     if st.session_state.logged_in:
         if st.session_state.page == "search":
+            
             show_search_page()
-        else:
+        else:  # description
+            # Кнопка "Выход" на странице описания
+
+            
             show_description_page()
         return
 

@@ -75,8 +75,9 @@ def process_dataset(csv_file_path: str):
     script_logger.info("Starting article processing...")
     
     # Проходимся по всем строкам датафрейма
+    count_processed = 0
     for _, row in tqdm(df.iterrows(), total=len(df), desc="Processing rows"):
-        if not row["summary"]:
+        if pd.isna(row["summary"]):
             continue
         
         # Извлечение и очистка полей
@@ -122,6 +123,7 @@ def process_dataset(csv_file_path: str):
                 }
             }
             actions.append(doc)
+            count_processed += 1
                 
         except Exception as e:
             script_logger.error(f"Ошибка при обработке ID {original_id} {e}")
@@ -135,6 +137,8 @@ def process_dataset(csv_file_path: str):
     # Отправка оставшихся
     if actions:
         helpers.bulk(es_client, actions)
+
+    script_logger.info(f"Processed and loaded {count_processed} articles into Elasticsearch.")
 
     # es_client.close()
     script_logger.info("Loading completed!")

@@ -29,6 +29,7 @@ async def ingest_article(article: Article):
 async def search_articles(request: SearchRequest):
     try:
         # Перевод запроса в эмбеддинг
+        back_logger.info(f"Received search query: {request.query}")
         query_vector = get_embedding(request.query)
         
         # Формирование запроса к ES
@@ -36,7 +37,8 @@ async def search_articles(request: SearchRequest):
 
         # Фильтры
         if request.author_filter:
-            filter_clauses.append({"wildcard": {"metadata.author": f"*{request.author_filter}*"}})
+            filter_clauses.append({"wildcard": {"metadata.author": f"*{request.author_filter.strip().lower()}*"}})
+            back_logger.info(f"Applying author filter: {request.author_filter}")
         
         if request.date_from or request.date_to:
             range_query = {}
@@ -45,6 +47,11 @@ async def search_articles(request: SearchRequest):
             if request.date_to:
                 range_query["lte"] = request.date_to
             filter_clauses.append({"range": {"metadata.published_date": range_query}})
+            back_logger.info(f"Applying date range filter: {range_query}")
+
+        if request.tags_filter:
+            filter_clauses.append({"term": {"metadata.tags": f"{request.tags_filter.strip().lower()}"}})
+            back_logger.info(f"Applying tags filter: {request.tags_filter}")
 
         # Построение KNN запроса
         knn_query = {
@@ -75,9 +82,10 @@ async def search_articles(request: SearchRequest):
                 similarity_score=hit['_score'],
                 metadata=hit['_source']['metadata']
             ))
+        back_logger.info(f"Search returned results: {[r.model_dump(exclude={'abstract'}) for r in results]}")
             
         return results
 
     except Exception as e:
-        print(f"Error: {e}")
+        back_logger.error(f"Error during search operation {e}")
         raise HTTPException(status_code=500, detail=str(e))

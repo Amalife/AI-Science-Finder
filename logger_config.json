@@ -16,10 +16,11 @@
         "level": "INFO"
       },
       "json_file": {
+        "encoding": "utf-8",
         "class": "logging.FileHandler",
         "formatter": "json",
         "level": "INFO",
-        "filename": "logs/log.json",
+        "filename": "logs/log",
         "mode": "a"
       }
     },
