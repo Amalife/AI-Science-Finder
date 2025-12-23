@@ -1,16 +1,20 @@
-import time
-import uvicorn
-from fastapi import FastAPI, Request
-import backend.endpoints as endpoints
 from logger.logger import setup_logging, back_logger
 from config.config import configuration
-from backend.external import es_client
-from contextlib import asynccontextmanager
 
 logger_config_path = configuration.project_root / "logger_config.json"
 setup_logging(
     config_path=logger_config_path
 )
+
+import time
+import uvicorn
+from fastapi import FastAPI, Request
+import backend.endpoints as endpoints
+
+from backend.external import es_client
+from contextlib import asynccontextmanager
+
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

@@ -9,16 +9,32 @@ pip install -U pip
 pip install -r requirements.txt
 ```
 
-4. Создать копию файла .env.example и назвать .env. Добавить настройки доступа к GigaChat API:
+4. Создать копию файла .env.example и назвать .env. 
+Сервис имеет функциональность работы эмбеддеров GigaChat API и HuggingFace
+
+Для работы через GigaChat API. Создать аккаунт и настроить API: https://developers.sber.ru/ 
+Добавить настройки доступа к GigaChat API:
 ```
 MODEL_NAME=...
 GIGACHAT_CREDENTIALS=...
 GIGACHAT_SCOPE=...
 GIGACHAT_VERIFY_SSL=...
 ```
+Для работы через HuggingFace настроить параметры:
+```
+USE_HF_EMBEDDER=true
+HF_MODEL_NAME=ai-forever/FRIDA
+HF_CACHE_DIR=./hf_cache
+```
+где,
+```USE_HF_EMBEDDER``` - Флаг использования эмбеддера HuggingFace или GigaChat API.
+```HF_MODEL_NAME``` - Название модели
+```HF_CACHE_DIR``` - Путь, где будет загружен эмбеддер
 
-DATA_CSV_FILENAME - Имя файла с данными в папке data 
-DATA_MAPPING_FILENAME - Имя файла с маппингом для векторной БД в папке data
+
+Остальные параметры:
+```DATA_CSV_FILENAME``` - Имя файла с данными в папке data 
+```DATA_MAPPING_FILENAME``` - Имя файла с маппингом для векторной БД в папке data
 
 5. Заполнение векторной базы данных
 
@@ -45,4 +61,4 @@ python main.py
 ```bash
 streamlit run frontend/main.py
 ```
-6. Откройте в браузере http://localhost:8501/
+7. Откройте в браузере http://localhost:8501/

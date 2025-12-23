@@ -5,7 +5,8 @@ from datetime import datetime
 import pandas as pd
 from tqdm.asyncio import tqdm
 from elasticsearch import helpers, Elasticsearch
-from gigachat import GigaChat
+from backend.external import get_embedding_dimension
+from backend.utils import get_embedding
 from config.config import configuration
 import logging
 from pathlib import Path
@@ -32,9 +33,11 @@ LOG_PATH = configuration.project_root / "logs" / "fill_vdb.log"
 prepare_logger("fill_vdb", LOG_PATH)
 script_logger = logging.getLogger("fill_vdb")
 
+script_logger.info("Using HF embedder for embeddings" if configuration.use_hf_embedder else "Using GigaChat API for embeddings")
+
 # --- Настройки ---
 ES_HOST = "http://localhost:9200"
-INDEX_NAME = "scientific_articles"
+INDEX_NAME = f"scientific_articles_{'hf' if configuration.use_hf_embedder else 'gigachat'}"
 
 # --- Инициализация ---
 if not configuration.gigachat_credentials:
@@ -64,11 +67,6 @@ def clean_date(date_str):
 def process_dataset(csv_file_path: str):
     script_logger.info(f"Loading dataset from {csv_file_path}")
     df = pd.read_csv(csv_file_path)
-    
-    # Инициализация GigaChat
-    giga = GigaChat(credentials=configuration.gigachat_credentials,
-                    scope=configuration.gigachat_scope,
-                    verify_ssl_certs=configuration.gigachat_verify_ssl)
     
     actions = []
     
@@ -103,8 +101,7 @@ def process_dataset(csv_file_path: str):
             
         try:
             # Получение эмбеддинга
-            embedding_response = giga.embeddings(texts=[text_to_embed])
-            vector = embedding_response.data[0].embedding
+            vector = get_embedding(text_to_embed)
                 
             doc = {
                 "_index": INDEX_NAME,
@@ -149,6 +146,10 @@ if __name__ == "__main__":
 
     with open(MAPPING_PATH, "r", encoding="utf-8") as json_mapfile:
         elastic_mappings = json.load(json_mapfile)
+    
+    elastic_mappings["mappings"]["properties"]["vector"]["dims"] = get_embedding_dimension()
+    script_logger.info(f"Using embedding dimension: {get_embedding_dimension()}")
+    
     if es_client.indices.exists(index=INDEX_NAME):
         script_logger.info(f"Index {INDEX_NAME} found, refilling data")
         es_client.indices.delete(index=INDEX_NAME)

@@ -10,6 +10,10 @@ class Config(BaseSettings):
     gigachat_scope: str | None = Field(validation_alias="GIGACHAT_SCOPE", default=None)
     gigachat_verify_ssl: bool = Field(validation_alias="GIGACHAT_VERIFY_SSL", default=False)
 
+    use_hf_embedder: bool = Field(validation_alias="USE_HF_EMBEDDER", default=False)
+    hf_model_name: str = Field(validation_alias="HF_MODEL_NAME", default="ai-forever/FRIDA")
+    hf_cache_dir: str = Field(validation_alias="HF_CACHE_DIR", default="./hf_cache")
+
     data_csv_filename: str = Field(validation_alias="DATA_CSV_FILENAME", default="data_sample_with_summaries.csv")
     data_mapping_filename: str = Field(validation_alias="DATA_MAPPING_FILENAME", default="mapping.json")
 

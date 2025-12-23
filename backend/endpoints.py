@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from backend.utils import get_embedding
-from backend.external import es_client
+from backend.external import es_client, get_index_name
 from backend.model import SearchRequest, SearchResult, Article
 from typing import List
 from logger.logger import back_logger
@@ -20,7 +20,7 @@ async def ingest_article(article: Article):
         doc = article.model_dump()
         doc["vector"] = vector
         
-        await es_client.index(index="scientific_articles", document=doc)
+        await es_client.index(index=get_index_name(), document=doc)
         return {"status": "success", "message": f"Статья '{article.title}' добавлена."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -66,7 +66,7 @@ async def search_articles(request: SearchRequest):
 
         # Выполнение запроса
         response = await es_client.search(
-            index="scientific_articles",
+            index=get_index_name(),
             knn=knn_query,
             source=["title", "url", "abstract", "metadata"] # Исключаем вектор из выдачи
         )

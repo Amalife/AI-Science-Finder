@@ -10,3 +10,4 @@ tqdm
 pandas
 aiohttp
 pydantic_settings
+sentence_transformers
