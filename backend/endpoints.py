@@ -1,28 +1,87 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, UploadFile, File
 from backend.utils import get_embedding
 from backend.external import es_client, get_index_name
 from backend.model import SearchRequest, SearchResult, Article
 from typing import List
 from logger.logger import back_logger
+from datetime import datetime
+import pdfplumber
 
 
 router = APIRouter()
 
 
-@router.post("/ingest")
-async def ingest_article(article: Article):
-    """Добавление статьи в базу (для наполнения)"""
+@router.post("/upload_pdf")
+async def upload_pdf(file: UploadFile = File(...)):
+    """Загрузка PDF файла с arXiv и добавление в базу"""
     try:
-        # Векторизуем объединение заголовка и аннотации
-        text_to_embed = f"{article.title} {article.abstract}"
-        vector = get_embedding(text_to_embed)
+        
+        # Чтение PDF
+        with pdfplumber.open(file.file) as pdf:
+            text = ""
+            for page in pdf.pages:
+                page_text = page.extract_text()
+                if page_text:
+                    text += page_text + "\n"
+        
+        # Парсинг текста (простой подход для arXiv PDF)
+        lines = text.split('\n')
+        title = ""
+        authors = ""
+        abstract = ""
+        in_abstract = False
+        
+        for line in lines:
+            line = line.strip()
+            if line.lower().startswith("title:") or line.lower().startswith("title"):
+                title = line.split(":", 1)[-1].strip()
+            elif line.lower().startswith("authors:") or line.lower().startswith("author"):
+                authors = line.split(":", 1)[-1].strip()
+            elif line.lower().startswith("abstract:") or line.lower().startswith("abstract"):
+                abstract = line.split(":", 1)[-1].strip()
+                in_abstract = True
+            elif in_abstract and line:
+                # Продолжение абстракта
+                if not line.lower().startswith(("introduction", "1.", "i.")):  # Простая эвристика окончания абстракта
+                    abstract += " " + line
+                else:
+                    break
+        
+        # Очистка
+        title = title.replace('\n', ' ').strip()
+        authors = authors.replace('\n', ' ').strip()
+        abstract = abstract.replace('\n', ' ').strip()
+        
+        # Предполагаем, что filename - это arXiv ID
+        arxiv_id = file.filename.replace('.pdf', '')
+        url = f"https://arxiv.org/pdf/{arxiv_id}"
+        
+        # Создание Article
+        article = Article(
+            title=title,
+            url=url,
+            abstract=abstract,
+            metadata={
+                "author": authors,
+                "published_date": datetime.now().strftime("%Y-%m-%d"),
+                "tags": []  # Можно добавить извлечение тегов позже
+            }
+        )
+        
+        # Векторизация абстракта
+        vector = get_embedding(abstract)
         
         doc = article.model_dump()
         doc["vector"] = vector
         
+        # Индексация в ES
         await es_client.index(index=get_index_name(), document=doc)
-        return {"status": "success", "message": f"Статья '{article.title}' добавлена."}
+        
+        back_logger.info(f"Uploaded and indexed PDF: {title}")
+        return {"status": "success", "message": f"PDF '{file.filename}' обработан и добавлен в базу."}
+    
     except Exception as e:
+        back_logger.error(f"Error uploading PDF: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/search", response_model=List[SearchResult])

@@ -11,3 +11,5 @@ pandas
 aiohttp
 pydantic_settings
 sentence_transformers
+pdfplumber
+python-multipart

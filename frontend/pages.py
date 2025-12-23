@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+import os
 
 
 # Функция для страницы описания сервиса
@@ -20,10 +21,16 @@ def show_description_page():
     Процесс: предобработка текста, векторизация, поиск соседей и ранжирование.
     """)
     
-    # Кнопка для перехода на страницу поиска
-    if st.button("Перейти к поиску статей"):
-        st.session_state.page = "search"
-        st.rerun()
+        # Кнопки для перехода
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Перейти к поиску статей"):
+            st.session_state.page = "search"
+            st.rerun()
+    with col2:
+        if st.button("Перейти к загрузке файлов"):
+            st.session_state.page = "upload"
+            st.rerun()
 
     if st.button("Выйти из аккаунта"):
         st.session_state.logged_in = False
@@ -31,6 +38,68 @@ def show_description_page():
         st.session_state.page = None
         st.rerun()
 
+# Функция для страницы загрузки файлов
+def show_upload_page():
+    st.title("Загрузка файлов для анализа AI-агентом")
+    st.write(f"Привет, {st.session_state.username}! Здесь вы можете загрузить файлы для анализа.")
+    
+    st.subheader("Загрузка файла")
+    uploaded_file = st.file_uploader(
+        "Выберите файл для загрузки (PDF)",
+        type=['pdf'],  # Расширения файлов
+        help="Файл будет временно сохранён и передан на анализ AI-агенту."
+    )
+    
+    if uploaded_file is not None:
+        # Сохранение файла в временную папку
+        file_details = {"filename": uploaded_file.name, "filetype": uploaded_file.type, "filesize": uploaded_file.size}
+        st.write("**Детали файла:**")
+        st.json(file_details)
+        
+        # Сохранение файла
+        os.makedirs("temp_uploads", exist_ok=True)
+        temp_path = os.path.join("temp_uploads", uploaded_file.name)
+        with open(temp_path, "wb") as f:
+            f.write(uploaded_file.getbuffer())
+        st.success(f"Файл '{uploaded_file.name}' успешно загружен!")
+        
+        # Отправка файла на бэкэнд для обработки
+        if st.button("Обработать и добавить в базу", key="process_btn"):
+            with st.spinner("Обработка PDF и добавление в базу..."):
+                try:
+                    with open(temp_path, "rb") as f:
+                        files = {"file": (uploaded_file.name, f, uploaded_file.type)}
+                        response = requests.post("http://localhost:8000/upload_pdf", files=files)
+                    
+                    if response.status_code == 200:
+                        result = response.json()
+                        st.success(result["message"])
+                        # Удаление временного файла
+                        os.remove(temp_path)
+                    else:
+                        st.error(f"Ошибка обработки: {response.text}")
+                except Exception as e:
+                    st.error(f"Ошибка: {str(e)}")
+    
+    # # Placeholder для анализа (поскольку бэкэнд агента добавят позже)
+    # if st.button("Анализировать файл", key="analyze_btn"):
+    #     st.info("Анализ файла запущен... (Бэкэнд AI-агента будет добавлен позже.)")
+    #     # Здесь можно добавить placeholder-результаты
+    #     st.subheader("Результаты анализа (пример)")
+    #     st.write("""
+    #     - **Сводка:** Документ описывает применение машинного обучения в медицине.
+    #     - **Ключевые идеи:** Диагностика рака с помощью нейросетей, предсказание заболеваний.
+    #     - **Рекомендации:** Проверьте статьи по теме 'ИИ в онкологии'.
+    #     """)
+    # Кнопка выхода или перехода
+    if st.button("Вернуться к описанию", key="back_to_desc"):
+        st.session_state.page = "description"
+        st.rerun()
+    if st.button("Выход", key="logout_upload"):
+        st.session_state.logged_in = False
+        st.session_state.page = None
+        del st.session_state.username
+        st.rerun()
 
 # Функция для страницы поиска статей
 def show_search_page():

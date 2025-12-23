@@ -1,6 +1,6 @@
 import streamlit as st
 from auth import init_db, check_credentials, register_user
-from pages import show_description_page, show_search_page
+from pages import show_description_page, show_search_page, show_upload_page
 
 
 def main():
@@ -40,12 +40,10 @@ def main():
     # Если пользователь вошёл, показываем страницу
     if st.session_state.logged_in:
         if st.session_state.page == "search":
-            
             show_search_page()
-        else:  # description
-            # Кнопка "Выход" на странице описания
-
-            
+        elif st.session_state.page == "upload":
+            show_upload_page()
+        else:
             show_description_page()
         return
 
